@@ -13,9 +13,7 @@ using HarmonyLib;
 using CustomCosmetics.Patches;
 using System.Threading.Tasks;
 using System.Collections;
-using UnityEngine.Events;
 using BananaOS;
-using Unity.Collections.LowLevel.Unsafe;
 using System.Text;
 
 namespace CustomCosmetics
@@ -32,13 +30,8 @@ namespace CustomCosmetics
         GameObject currentLHoldable;
         GameObject currentHat;
         GameObject currentBadge;
-        struct customMaterial
-        {
-            public Material mat;
-            public bool customColours;
-        }
-        customMaterial currentMaterial = new customMaterial();
-        customMaterial currentTaggedMaterial = new customMaterial();
+        customMaterial currentMaterial;
+        customMaterial currentTaggedMaterial;
         Material defaultTaggedMaterial;
         public string cosmeticPath = Path.Combine(Path.GetDirectoryName(typeof(Plugin).Assembly.Location), "Cosmetics");
         public ConfigEntry<string> hat;
@@ -97,12 +90,12 @@ namespace CustomCosmetics
                 currentTaggedMaterial.mat = null;
                 currentMaterial.mat = null;
                 removeCosmetics = Config.Bind("Settings", "Remove Cosmetics", false, "Whether the mod should unequip normal cosmetics when equipping custom ones.");
-                hat = Config.Bind("Cosmetics", "Current Hat", "", "This is the current hat your using.");
-                Lholdable = Config.Bind("Cosmetics", "Current Left Holdable", "", "This is the current left holdable your using.");
-                Rholdable = Config.Bind("Cosmetics", "Current Right Holdable", "", "This is the current right holdable your using.");
-                badge = Config.Bind("Cosmetics", "Current Badge", "", "This is the current badge your using.");
-                material = Config.Bind("Cosmetics", "Current Material", "", "This is the current material your using.");
-                taggedMaterial = Config.Bind("Cosmetics", "Current Tagged Material", "", "This is the current tagged material your using.");
+                hat = Config.Bind("Cosmetics", "Current Hat", String.Empty, "This is the current hat your using.");
+                Lholdable = Config.Bind("Cosmetics", "Current Left Holdable", string.Empty, "This is the current left holdable your using.");
+                Rholdable = Config.Bind("Cosmetics", "Current Right Holdable", string.Empty, "This is the current right holdable your using.");
+                badge = Config.Bind("Cosmetics", "Current Badge", string.Empty, "This is the current badge your using.");
+                material = Config.Bind("Cosmetics", "Current Material", string.Empty, "This is the current material your using.");
+                taggedMaterial = Config.Bind("Cosmetics", "Current Tagged Material", string.Empty, "This is the current tagged material your using.");
                 if (!Directory.Exists(cosmeticPath))
                 {
                     Directory.CreateDirectory(cosmeticPath);
@@ -233,7 +226,7 @@ namespace CustomCosmetics
                 Debug.Log("Issue when loading CustomCosmetics");
                 StringBuilder str = new StringBuilder();
                 str.AppendLine("<color=red>==Error When Loading==</color>");
-                str.AppendLine("");
+                str.AppendLine(string.Empty);
                 str.AppendLine("There was an error when loading cosmetics.");
                 str.AppendLine($"You have a broken cosmetic installed, \nplease click enter to delete cosmetic {Path.GetFileName(currentCosmeticLoading)} and reload the mod");
                 errorText = str;
@@ -253,18 +246,18 @@ namespace CustomCosmetics
             if (file == "DisableR")
             {
                 Destroy(currentRHoldable);
-                Rholdable.Value = "";
+                Rholdable.Value = string.Empty;
                 var table = PhotonNetwork.LocalPlayer.CustomProperties;
-                table.AddOrUpdate("CustomRHoldable", "");
+                table["CustomRHoldable"] = string.Empty;
                 PhotonNetwork.LocalPlayer.SetCustomProperties(table);
                 return;
             }
-            else if (file == "DisableL")
+            if (file == "DisableL")
             {
                 Destroy(currentLHoldable);
-                Lholdable.Value = "";
+                Lholdable.Value = string.Empty;
                 var table = PhotonNetwork.LocalPlayer.CustomProperties;
-                table.AddOrUpdate("CustomLHoldable", "");
+                table["CustomLHoldable"] = string.Empty;
                 PhotonNetwork.LocalPlayer.SetCustomProperties(table);
                 return;
             }
@@ -305,9 +298,9 @@ namespace CustomCosmetics
                         currentRHoldable = rHoldable;
                         Rholdable.Value = Path.GetFileName(file);
                         var table = PhotonNetwork.LocalPlayer.CustomProperties;
-                        table.AddOrUpdate("CustomRHoldable", holdableDes.Name);
+                        table["CustomRHoldable"] = holdableDes.Name;
                         PhotonNetwork.LocalPlayer.SetCustomProperties(table);
-                        rHoldable.transform.SetParent(GameObject.Find("Player Objects/Local VRRig/Local Gorilla Player/rig/body/shoulder.R/upper_arm.R/forearm.R/hand.R/palm.01.R/").transform, false);
+                        rHoldable.transform.SetParent(GorillaTagger.Instance.offlineVRRig.headMesh.transform.parent.Find("shoulder.R/upper_arm.R/forearm.R/hand.R/palm.01.R/").transform, false);
                     }
                     else if (lHand)
                     {
@@ -328,9 +321,9 @@ namespace CustomCosmetics
                         currentLHoldable = lHoldable;
                         Lholdable.Value = Path.GetFileName(file);
                         var table = PhotonNetwork.LocalPlayer.CustomProperties;
-                        table.AddOrUpdate("CustomLHoldable", holdableDes.Name);
+                        table["CustomLHoldable"] = holdableDes.Name;
                         PhotonNetwork.LocalPlayer.SetCustomProperties(table);
-                        lHoldable.transform.SetParent(GameObject.Find("Player Objects/Local VRRig/Local Gorilla Player/rig/body/shoulder.L/upper_arm.L/forearm.L/hand.L/palm.01.L/").transform, false);
+                        lHoldable.transform.SetParent(GorillaTagger.Instance.offlineVRRig.headMesh.transform.parent.Find("shoulder.L/upper_arm.L/forearm.L/hand.L/palm.01.L/").transform, false);
                     }
                     Destroy(parentAsset);
                 }
@@ -346,9 +339,9 @@ namespace CustomCosmetics
                         currentRHoldable = parentAsset;
                         Rholdable.Value = Path.GetFileName(file);
                         var table = PhotonNetwork.LocalPlayer.CustomProperties;
-                        table.AddOrUpdate("CustomRHoldable", cosmeticName);
+                        table["CustomRHoldable"] = cosmeticName;
                         PhotonNetwork.LocalPlayer.SetCustomProperties(table);
-                        parentAsset.transform.SetParent(GameObject.Find("Player Objects/Local VRRig/Local Gorilla Player/rig/body/shoulder.R/upper_arm.R/forearm.R/hand.R/palm.01.R/").transform, false);
+                        parentAsset.transform.SetParent(GorillaTagger.Instance.offlineVRRig.headMesh.transform.parent.Find("shoulder.R/upper_arm.R/forearm.R/hand.R/palm.01.R/").transform, false);
                     }
                     else if (lHand)
                     {
@@ -356,9 +349,9 @@ namespace CustomCosmetics
                         currentLHoldable = parentAsset;
                         Lholdable.Value = Path.GetFileName(file);
                         var table = PhotonNetwork.LocalPlayer.CustomProperties;
-                        table.AddOrUpdate("CustomLHoldable", cosmeticName);
+                        table["CustomLHoldable"] = cosmeticName;
                         PhotonNetwork.LocalPlayer.SetCustomProperties(table);
-                        parentAsset.transform.SetParent(GameObject.Find("Player Objects/Local VRRig/Local Gorilla Player/rig/body/shoulder.L/upper_arm.L/forearm.L/hand.L/palm.01.L/").transform, false);
+                        parentAsset.transform.SetParent(GorillaTagger.Instance.offlineVRRig.headMesh.transform.parent.Find("shoulder.L/upper_arm.L/forearm.L/hand.L/palm.01.L/").transform, false);
                     }
                 }
             }
@@ -369,19 +362,18 @@ namespace CustomCosmetics
             if (file == "Disable")
             {
                 Destroy(currentHat);
-                hat.Value = "";
+                hat.Value = string.Empty;
                 var table = PhotonNetwork.LocalPlayer.CustomProperties;
-                table.AddOrUpdate("CustomHat", "");
+                table["CustomHat"] = string.Empty;
                 PhotonNetwork.LocalPlayer.SetCustomProperties(table);
                 return;
             }
 
-            if (!assetCache.TryGetValue(Path.GetFileName(file), out var empty))
-            {
+            if (!assetCache.ContainsKey(Path.GetFileName(file)))
                 return;
-            }
 
-            if (removeCosmetics.Value == true) { RemoveItem(CosmeticsController.CosmeticCategory.Hat, CosmeticsController.CosmeticSlots.Hat); }
+            if (removeCosmetics.Value)
+                RemoveItem(CosmeticsController.CosmeticCategory.Hat, CosmeticsController.CosmeticSlots.Hat);
             GameObject asset;
             assetCache.TryGetValue(Path.GetFileName(file), out asset);
             GameObject prefab = Instantiate(asset);
@@ -389,13 +381,13 @@ namespace CustomCosmetics
             if (!usingTextMethod)
             {
                 var table = PhotonNetwork.LocalPlayer.CustomProperties;
-                table.AddOrUpdate("CustomHat", hatDes.Name);
+                table["CustomHat"] = hatDes.Name;
                 PhotonNetwork.LocalPlayer.SetCustomProperties(table);
             }
             else
             {
                 var table = PhotonNetwork.LocalPlayer.CustomProperties;
-                table.AddOrUpdate("CustomHat", cosmeticName);
+                table["CustomHat"] = cosmeticName;
                 PhotonNetwork.LocalPlayer.SetCustomProperties(table);
             }
             if (prefab != null)
@@ -432,7 +424,7 @@ namespace CustomCosmetics
                     Destroy(currentHat);
                 }
                 currentHat = parentAsset;
-                parentAsset.transform.SetParent(GameObject.Find("Player Objects/Local VRRig/Local Gorilla Player/rig/body/head/").transform, false);
+                parentAsset.transform.SetParent(GorillaTagger.Instance.offlineVRRig.headMesh.transform, false);
             }
         }
         public void LoadBadge(string file)
@@ -440,18 +432,17 @@ namespace CustomCosmetics
             if (file == "Disable")
             {
                 Destroy(currentBadge);
-                badge.Value = "";
+                badge.Value = string.Empty;
                 var table = PhotonNetwork.LocalPlayer.CustomProperties;
-                table.AddOrUpdate("CustomBadge", "");
+                table["CustomBadge"] = string.Empty;
                 PhotonNetwork.LocalPlayer.SetCustomProperties(table);
             }
 
-            if (!assetCache.TryGetValue(Path.GetFileName(file), out var empty))
-            {
+            if (!assetCache.ContainsKey(Path.GetFileName(file)))
                 return;
-            }
 
-            if (removeCosmetics.Value == true) { RemoveItem(CosmeticsController.CosmeticCategory.Badge, CosmeticsController.CosmeticSlots.Badge); }
+            if (removeCosmetics.Value)
+                RemoveItem(CosmeticsController.CosmeticCategory.Badge, CosmeticsController.CosmeticSlots.Badge);
             GameObject asset;
             assetCache.TryGetValue(Path.GetFileName(file), out asset);
             GameObject prefab = Instantiate(asset);
@@ -459,13 +450,13 @@ namespace CustomCosmetics
             if (!usingTextMethod)
             {
                 var table = PhotonNetwork.LocalPlayer.CustomProperties;
-                table.AddOrUpdate("CustomBadge", badgeDes.Name);
+                table["CustomBadge"] = badgeDes.Name;
                 PhotonNetwork.LocalPlayer.SetCustomProperties(table);
             }
             else
             {
                 var table = PhotonNetwork.LocalPlayer.CustomProperties;
-                table.AddOrUpdate("CustomBadge", cosmeticName);
+                table["CustomBadge"] = cosmeticName;
                 PhotonNetwork.LocalPlayer.SetCustomProperties(table);
             }
 
@@ -478,7 +469,7 @@ namespace CustomCosmetics
                 }
                 Destroy(currentBadge);
                 currentBadge = parentAsset;
-                parentAsset.transform.SetParent(GameObject.Find("Player Objects/Local VRRig/Local Gorilla Player/rig/body/").transform, false);
+                parentAsset.transform.SetParent(GorillaTagger.Instance.offlineVRRig.headMesh.transform.parent, false);
             }
         }
 
@@ -502,11 +493,11 @@ namespace CustomCosmetics
             {
                 if (!playerRig.isLocal)
                 {
-                    ExitGames.Client.Photon.Hashtable props = PhotonNetwork.CurrentRoom.GetPlayer(player.ID).CustomProperties;
-                    Photon.Realtime.Player playerr = PhotonNetwork.CurrentRoom.GetPlayer(player.ID);
+                    ExitGames.Client.Photon.Hashtable props = PhotonNetwork.CurrentRoom.GetPlayer(player.ActorNumber).CustomProperties;
+                    Photon.Realtime.Player playerr = PhotonNetwork.CurrentRoom.GetPlayer(player.ActorNumber);
                     normalplayers.Add(playerRig, playerr);
                     Debug.Log($"{player.NickName} entered the room");
-                    if (props.TryGetValue("CustomHat", out object hat) || props.TryGetValue("CustomLHoldable", out object hold) || props.TryGetValue("CustomRHoldable", out object rhold) || props.TryGetValue("CustomBadge", out object badge) || props.TryGetValue("CustomMaterial", out object material) || props.TryGetValue("CustomTagMaterial", out object tagmaterial))
+                    if (props.ContainsKey("CustomHat") || props.ContainsKey("CustomLHoldable") || props.ContainsKey("CustomRHoldable") || props.ContainsKey("CustomBadge") || props.ContainsKey("CustomMaterial") || props.ContainsKey("CustomTagMaterial"))
                     {
                         cosmeticsplayers.Add(playerRig, playerr);
                         SetCosmetics(playerRig, props, playerr);
@@ -515,7 +506,7 @@ namespace CustomCosmetics
                 else
                 {
                     var table = PhotonNetwork.LocalPlayer.CustomProperties;
-                    table.AddOrUpdate("Colour", GorillaTagger.Instance.offlineVRRig.playerColor.ToString());
+                    table["Colour"] = GorillaTagger.Instance.offlineVRRig.playerColor.ToString();
                     PhotonNetwork.LocalPlayer.SetCustomProperties(table);
                 }
             }
@@ -532,7 +523,7 @@ namespace CustomCosmetics
                 {
                     Photon.Realtime.Player player = normalplayers[r];
                     ExitGames.Client.Photon.Hashtable props = player.CustomProperties;
-                    if(props.TryGetValue("CustomHat", out object hat) || props.TryGetValue("CustomLHoldable", out object hold) || props.TryGetValue("CustomRHoldable", out object rhold) || props.TryGetValue("CustomMaterial", out object material) || props.TryGetValue("CustomTagMaterial", out object tagmaterial))
+                    if (props.ContainsKey("CustomHat") || props.ContainsKey("CustomLHoldable") || props.ContainsKey("CustomRHoldable") || props.ContainsKey("CustomMaterial") || props.ContainsKey("CustomTagMaterial"))
                     {
                         RemoveCosmetics(props, r, player);
                     }
@@ -551,7 +542,7 @@ namespace CustomCosmetics
 
         public void RemoveCosmetics(ExitGames.Client.Photon.Hashtable props, VRRig r, Photon.Realtime.Player player)
         {
-            if (props.TryGetValue("CustomHat", out object hat) || props.TryGetValue("CustomLHoldable", out object hold) || props.TryGetValue("CustomRHoldable", out object holdr) || props.TryGetValue("CustomBadge", out object badge) || props.TryGetValue("CustomMaterial", out object material) || props.TryGetValue("CustomTagMaterial", out object tagmaterial))
+            if (props.ContainsKey("CustomHat") || props.ContainsKey("CustomLHoldable") || props.ContainsKey("CustomRHoldable") || props.ContainsKey("CustomBadge") || props.ContainsKey("CustomMaterial") || props.ContainsKey("CustomTagMaterial"))
             {
                 if(networkHats.ContainsKey(player))
                 {
@@ -587,72 +578,62 @@ namespace CustomCosmetics
         {
             if (playerRig != null)
             {
-                if (props.TryGetValue("CustomHat", out object test))
-                {
-                    Debug.Log($"{playerr.NickName} is using Custom Cosmetics, hat is: {test.ToString()}");
-                    if (nameAssetCache.TryGetValue(test.ToString(), out GameObject hat))
-                    {
-                        LoadNetworkHat(test.ToString(), playerRig, playerr);
-                    }
-                }
-                if (props.TryGetValue("CustomRHoldable", out object r))
-                {
-                    Debug.Log($"{playerr.NickName} is using Custom Cosmetics, holdable is: {r.ToString()}");
-                    if(nameAssetCache.TryGetValue(r.ToString(), out GameObject rholdable))
-                    {
-                        LoadNetworkHoldable(r.ToString(), playerRig, playerr, false);
-                    }
-                }
-                if (props.TryGetValue("CustomLHoldable", out object l))
-                {
-                    Debug.Log($"{playerr.NickName} is using Custom Cosmetics, holdable is: {l.ToString()}");
-                    if (nameAssetCache.TryGetValue(l.ToString(), out GameObject lholdable))
-                    {
-                        LoadNetworkHoldable(l.ToString(), playerRig, playerr, true);
-                    }
-                }
-                if (props.TryGetValue("CustomBadge", out object testtt))
-                {
-                    Debug.Log($"{playerr.NickName} is using Custom Cosmetics, badge is: {testtt.ToString()}");
-                    if (nameAssetCache.TryGetValue(testtt.ToString(), out GameObject badge))
-                    {
-                        LoadNetworkBadge(testtt.ToString(), playerRig, playerr);
-                    }
-                }
-                if (props.TryGetValue("CustomMaterial", out object testttt))
-                {
-                    Debug.Log($"{playerr.NickName} is using Custom Cosmetics, material is: {testttt.ToString()}");
-                    if (nameAssetCache.TryGetValue(testttt.ToString(), out GameObject mat))
-                    {
-                        props.TryGetValue("Colour", out object color);
-                        Color c = parseColor(color.ToString());
-                        LoadNetworkMaterial(testttt.ToString(), 0, playerRig, playerr, c);
-                    }
-                }
-                if (props.TryGetValue("CustomTagMaterial", out object tagmat))
-                {
-                    Debug.Log($"{playerr.NickName} is using Custom Cosmetics, tagged material is: {tagmat.ToString()}");
-                    if (nameAssetCache.TryGetValue(tagmat.ToString(), out GameObject taggmat))
-                    {
-                        props.TryGetValue("Colour", out object co);
-                        Color col = parseColor(co.ToString());
-                        LoadNetworkMaterial(tagmat.ToString(), 2, playerRig, playerr, col);
-                    }
-                }
+                SetCosmetic(playerRig, props, "CustomHat", playerr);
+                SetCosmetic(playerRig, props, "CustomRHoldable", playerr);
+                SetCosmetic(playerRig, props, "CustomLHoldable", playerr);
+                SetCosmetic(playerRig, props, "CustomBadge", playerr);
+                SetCosmetic(playerRig, props, "CustomMaterial", playerr);
+                SetCosmetic(playerRig, props, "CustomTagMaterial", playerr);
             }
-            else if (playerRig == null)
+            else
             {
                 Debug.Log("rig is null uh oh");
+                return;
             }
-            else if (playerRig.playerText.gameObject == null)
+            if (playerRig.playerText.gameObject == null)
             {
                 Debug.Log("text is null this is not sigma but its fine");
             }
         }
 
+        public void SetCosmetic(VRRig playerRig, ExitGames.Client.Photon.Hashtable props, string propkey, Photon.Realtime.Player playerr)
+        {
+            if (props.TryGetValue(propkey, out object cosm))
+            {
+                string cosmetic = cosm.ToString();
+                Debug.Log($"{playerr.NickName} is using Custom Cosmetics, cosmetic equipped is: {cosmetic}");
+                if (nameAssetCache.ContainsKey(cosmetic))
+                {
+                    props.TryGetValue("Colour", out object co);
+                    Color col = parseColor(co.ToString());
+                    switch (propkey)
+                    {
+                        case "CustomMaterial":
+                            LoadNetworkMaterial(cosmetic, 0, playerRig, playerr, col);
+                            break;
+                        case "CustomTagMaterial":
+                            LoadNetworkMaterial(cosmetic, 2, playerRig, playerr, col);
+                            break;
+                        case "CustomBadge":
+                            LoadNetworkBadge(cosmetic, playerRig, playerr);
+                            break;
+                        case "CustomLHoldable":
+                            LoadNetworkHoldable(cosmetic, playerRig, playerr, true);
+                            break;
+                        case "CustomRHoldable":
+                            LoadNetworkHoldable(cosmetic, playerRig, playerr, false);
+                            break;
+                        case "CustomHat":
+                            LoadNetworkHat(cosmetic, playerRig, playerr);
+                            break;
+                    }
+                }
+            }
+        }
+
         public void LoadNetworkHat(string file, VRRig rig, Photon.Realtime.Player player)
         {
-            if (file != "")
+            if (file != string.Empty)
             {
                 GameObject asset;
                 nameAssetCache.TryGetValue(file, out asset);
@@ -665,7 +646,7 @@ namespace CustomCosmetics
                         Destroy(collider);
                     }
                     networkHats.Add(player, parentAsset);
-                    parentAsset.transform.SetParent(rig.transform.Find("rig/body/head/"), false);
+                    parentAsset.transform.SetParent(rig.headMesh.transform, false);
                 }
             }
         }
@@ -673,7 +654,7 @@ namespace CustomCosmetics
         {
             try
             {
-                if (file != "")
+                if (file != string.Empty)
                 {
                     GameObject asset;
                     nameAssetCache.TryGetValue(file, out asset);
@@ -703,13 +684,13 @@ namespace CustomCosmetics
                             if (!lHand)
                             {
                                 GameObject rHoldable = Instantiate(parentAsset.GetComponent<HoldableDescriptor>().rightHandObject);
-                                rHoldable.transform.SetParent(rig.transform.Find("rig/body/shoulder.R/upper_arm.R/forearm.R/hand.R/palm.01.R/"), false);
+                                rHoldable.transform.SetParent(rig.headMesh.transform.parent.Find("shoulder.R/upper_arm.R/forearm.R/hand.R/palm.01.R/"), false);
                                 networkRHoldables.Add(player, rHoldable);
                             }
                             else if (lHand)
                             {
                                 GameObject lHoldable = Instantiate(parentAsset.GetComponent<HoldableDescriptor>().leftHandObject);
-                                lHoldable.transform.SetParent(rig.transform.Find("rig/body/shoulder.L/upper_arm.L/forearm.L/hand.L/palm.01.L/"), false);
+                                lHoldable.transform.SetParent(rig.headMesh.transform.parent.Find("shoulder.L/upper_arm.L/forearm.L/hand.L/palm.01.L/"), false);
                                 networkLHoldables.Add(player, lHoldable);
                             }
                             Destroy(parentAsset);
@@ -724,7 +705,7 @@ namespace CustomCosmetics
         }
         public void LoadNetworkBadge(string file, VRRig rig, Photon.Realtime.Player player)
         {
-            if (file != "")
+            if (file != string.Empty)
             {
                 GameObject asset;
                 nameAssetCache.TryGetValue(file, out asset);
@@ -736,14 +717,14 @@ namespace CustomCosmetics
                     {
                         Destroy(collider);
                     }
-                    parentAsset.transform.SetParent(rig.transform.Find("rig/body/"), false);
+                    parentAsset.transform.SetParent(rig.headMesh.transform.parent, false);
                     networkBadges.Add(player, parentAsset);
                 }
             }
         }
         public void LoadNetworkMaterial(string file, int materialIndex, VRRig rig, Photon.Realtime.Player player, Color colour)
         {
-            if (file != "")
+            if (file != string.Empty)
             {
                 GameObject asset;
                 nameAssetCache.TryGetValue(file, out asset);
@@ -915,10 +896,10 @@ namespace CustomCosmetics
             {
                 if(materialIndex == 0)
                 {
-                    material.Value = "";
+                    material.Value = string.Empty;
                     currentMaterial.mat = null;
                     var table = PhotonNetwork.LocalPlayer.CustomProperties;
-                    table.AddOrUpdate("CustomMaterial", "");
+                    table["CustomMaterial"] = string.Empty;
                     PhotonNetwork.LocalPlayer.SetCustomProperties(table);
                     VRRig rig = GorillaTagger.Instance.offlineVRRig;
                     rig.materialsToChangeTo[0] = rig.myDefaultSkinMaterialInstance;
@@ -927,12 +908,12 @@ namespace CustomCosmetics
                     sharedMaterials[1] = rig.defaultSkin.chestMaterial;
                     rig.mainSkin.sharedMaterials = sharedMaterials;
                 }
-                else if(materialIndex == 2)
+                else if (materialIndex == 2)
                 {
-                    taggedMaterial.Value = "";
+                    taggedMaterial.Value = string.Empty;
                     currentTaggedMaterial.mat = null;
                     var table = PhotonNetwork.LocalPlayer.CustomProperties;
-                    table.AddOrUpdate("CustomTagMaterial", "");
+                    table["CustomTagMaterial"] = string.Empty;
                     PhotonNetwork.LocalPlayer.SetCustomProperties(table);
                     VRRig rig = GorillaTagger.Instance.offlineVRRig;
                     rig.materialsToChangeTo[2] = defaultTaggedMaterial;
@@ -983,7 +964,7 @@ namespace CustomCosmetics
                             currentMaterial.mat.color = rig.playerColor;
                         }
                         var table = PhotonNetwork.LocalPlayer.CustomProperties;
-                        table.AddOrUpdate("CustomMaterial", matDes.Name);
+                        table["CustomMaterial"] = matDes.Name;
                         PhotonNetwork.LocalPlayer.SetCustomProperties(table);
                         rig.materialsToChangeTo[materialIndex] = currentMaterial.mat;
                         Material[] sharedMaterials = rig.mainSkin.sharedMaterials;
@@ -1008,7 +989,7 @@ namespace CustomCosmetics
                             currentTaggedMaterial.mat.color = new Color(1f, 0.4f, 0f);
                         }
                         var table = PhotonNetwork.LocalPlayer.CustomProperties;
-                        table.AddOrUpdate("CustomTagMaterial", matDes.Name);
+                        table["CustomTagMaterial"] = matDes.Name;
                         PhotonNetwork.LocalPlayer.SetCustomProperties(table);
                         rig.materialsToChangeTo[materialIndex] = currentTaggedMaterial.mat;
                         Material[] sharedMaterials = rig.mainSkin.sharedMaterials;
@@ -1113,7 +1094,7 @@ namespace CustomCosmetics
         public void UpdateColour(Color colour)
         {
             var table = PhotonNetwork.LocalPlayer.CustomProperties;
-            table.AddOrUpdate("Colour", colour.ToString());
+            table["Colour"] = colour.ToString();
             PhotonNetwork.LocalPlayer.SetCustomProperties(table);
             if (currentMaterial.mat != null)
             {
@@ -1197,7 +1178,7 @@ namespace CustomCosmetics
         }
         Color parseColor(string sourceString)
         {
-            if (sourceString == null || sourceString == "" || sourceString == "$")
+            if (sourceString == null || sourceString == string.Empty || sourceString == "$")
             {
                 return Color.black;
             }
@@ -1227,5 +1208,11 @@ namespace CustomCosmetics
 
             return outColor;
         }
+    }
+    
+    struct customMaterial
+    {
+        public Material mat;
+        public bool customColours;
     }
 }

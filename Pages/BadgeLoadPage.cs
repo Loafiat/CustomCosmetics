@@ -1,11 +1,6 @@
 ﻿using BananaOS;
 using BananaOS.Pages;
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Text;
-using Unity.Mathematics;
-using UnityEngine;
 
 namespace CustomCosmetics
 {
